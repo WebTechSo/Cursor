@@ -8,7 +8,7 @@ export interface Company {
   website?: string;
   logo?: string;
   settings: CompanySettings;
-  subscription: Subscription;
+  subscription: any; // Will be properly typed later
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -31,7 +31,12 @@ export interface CompanySettings {
   currency: string;
   units: UnitSystem;
   notifications: NotificationSettings;
-  tracking: TrackingSettings;
+  tracking: {
+    updateInterval: number;
+    storeRawData: boolean;
+    dataRetentionDays: number;
+    enableReports: boolean;
+  };
 }
 
 export enum UnitSystem {

@@ -20,7 +20,12 @@ export interface Vehicle {
   maintenance: MaintenanceInfo;
   fuel: FuelInfo;
   insurance: InsuranceInfo;
-  location?: LocationData;
+  location?: {
+    latitude: number;
+    longitude: number;
+    timestamp: Date;
+    address?: string;
+  };
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

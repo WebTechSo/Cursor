@@ -38,7 +38,11 @@ export const connectDB = async (): Promise<void> => {
 
   } catch (error) {
     logger.error('Database connection failed:', error);
-    process.exit(1);
+    logger.warn('Continuing without database connection for now...');
+    // Don't exit in development mode without database
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   }
 };
 

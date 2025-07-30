@@ -13,8 +13,8 @@ import { logger, morganStream } from './config/logger';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import { socketAuth } from './middleware/socketAuth';
 
-// Import routes (will be created)
-// import authRoutes from './routes/auth';
+// Import routes
+import authRoutes from './routes/auth';
 // import userRoutes from './routes/users';
 // import companyRoutes from './routes/companies';
 // import vehicleRoutes from './routes/vehicles';
@@ -91,8 +91,8 @@ app.use('/api/v1', (req, res, next) => {
   next();
 });
 
-// Route handlers (uncomment as routes are created)
-// app.use('/api/v1/auth', authRoutes);
+// Route handlers
+app.use('/api/v1/auth', authRoutes);
 // app.use('/api/v1/users', userRoutes);
 // app.use('/api/v1/companies', companyRoutes);
 // app.use('/api/v1/vehicles', vehicleRoutes);

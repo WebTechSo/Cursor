@@ -56,8 +56,8 @@
     "@react-native-async-storage/async-storage": "1.21.0",
     "react-native-modal": "^13.0.1",
     "react-native-image-crop-picker": "^0.40.3",
-    "react-native-background-job": "^0.2.9",
-    "react-native-background-task": "^0.2.1",
+    "expo-background-fetch": "~11.8.0",
+    "expo-task-manager": "~11.7.2",
     "@vehicle-tracking/shared": "file:../shared"
   },
   "devDependencies": {

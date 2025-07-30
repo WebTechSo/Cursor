@@ -1,18 +1,24 @@
 import { 
   UserRole, 
-  Permission, 
-  VehicleType, 
-  VehicleStatus, 
+  Permission
+} from '../types/user';
+import { 
   EngineType, 
   FuelType, 
-  TransmissionType,
-  UnitSystem,
+  TransmissionType
+} from '../types/vehicle';
+import {
+  UnitSystem
+} from '../types/company';
+import {
   SubscriptionPlan,
-  SubscriptionFeature,
+  SubscriptionFeature
+} from '../types/subscription';
+import {
   DeviceManufacturer,
   DeviceProtocol,
   DeviceFeature
-} from '../types';
+} from '../types/device';
 
 export const DEFAULT_USER_PERMISSIONS = {
   [UserRole.SUPER_ADMIN]: [
