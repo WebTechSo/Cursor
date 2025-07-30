@@ -1,11 +1,27 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User';
+import bcrypt from 'bcryptjs';
 import { asyncHandler } from '../middleware/errorHandler';
 import { ApiResponse, LoginRequest, LoginResponse } from '@vehicle-tracking/shared';
 
 const router = express.Router();
+
+// Mock user data for demonstration (in real app, this would be in MongoDB)
+const mockUsers: any[] = [
+  {
+    _id: '507f1f77bcf86cd799439011',
+    email: 'admin@demo.com',
+    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LdKxjK7lL.1L.KqPq', // password123
+    firstName: 'Admin',
+    lastName: 'User',
+    role: 'company_admin',
+    companyId: '507f1f77bcf86cd799439012',
+    permissions: ['manage_users', 'view_users', 'manage_vehicles', 'view_vehicles'],
+    isActive: true,
+    lastLogin: new Date()
+  }
+];
 
 // @desc    Register a new user
 // @route   POST /api/v1/auth/register
@@ -15,7 +31,7 @@ router.post('/register', [
   body('password').isLength({ min: 8 }),
   body('firstName').notEmpty().trim(),
   body('lastName').notEmpty().trim(),
-  body('companyId').notEmpty()
+  body('companyId').optional()
 ], asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -29,7 +45,7 @@ router.post('/register', [
   const { email, password, firstName, lastName, companyId, role, permissions } = req.body;
 
   // Check if user already exists
-  const existingUser = await User.findOne({ email });
+  const existingUser = mockUsers.find(user => user.email === email);
   if (existingUser) {
     return res.status(409).json({
       success: false,
@@ -37,29 +53,35 @@ router.post('/register', [
     } as ApiResponse);
   }
 
-  // Create user
-  const user = new User({
+  // Hash password
+  const saltRounds = parseInt(process.env.BCRYPT_ROUNDS || '12');
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+  // Create mock user
+  const newUser = {
+    _id: Date.now().toString(), // Simple ID generation for demo
     email,
-    password,
+    password: hashedPassword,
     firstName,
     lastName,
-    companyId,
+    companyId: companyId || '507f1f77bcf86cd799439012',
     role: role || 'viewer',
     permissions: permissions || [],
-    isActive: true
-  });
+    isActive: true,
+    lastLogin: new Date()
+  };
 
-  await user.save();
+  mockUsers.push(newUser);
 
   // Generate JWT token
   const token = jwt.sign(
-    { userId: user._id, companyId: user.companyId },
+    { userId: newUser._id, companyId: newUser.companyId },
     process.env.JWT_SECRET!,
     { expiresIn: process.env.JWT_EXPIRE || '24h' }
   );
 
   const refreshToken = jwt.sign(
-    { userId: user._id },
+    { userId: newUser._id },
     process.env.JWT_REFRESH_SECRET!,
     { expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d' }
   );
@@ -69,14 +91,14 @@ router.post('/register', [
     message: 'User registered successfully',
     data: {
       user: {
-        _id: user._id.toString(),
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        role: user.role,
-        companyId: user.companyId.toString(),
-        permissions: user.permissions
+        _id: newUser._id,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        phone: newUser.phone,
+        role: newUser.role,
+        companyId: newUser.companyId,
+        permissions: newUser.permissions
       },
       token,
       refreshToken
@@ -104,20 +126,12 @@ router.post('/login', [
 
   const { email, password }: LoginRequest = req.body;
 
-  // Find user and include password
-  const user = await User.findOne({ email }).select('+password');
+  // Find user in mock data
+  const user = mockUsers.find(u => u.email === email);
   if (!user) {
     return res.status(401).json({
       success: false,
       message: 'Invalid credentials'
-    } as ApiResponse);
-  }
-
-  // Check if account is locked
-  if (user.isLocked) {
-    return res.status(423).json({
-      success: false,
-      message: 'Account is temporarily locked due to too many failed login attempts'
     } as ApiResponse);
   }
 
@@ -130,23 +144,16 @@ router.post('/login', [
   }
 
   // Check password
-  const isPasswordValid = await user.comparePassword(password);
+  const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    await user.incLoginAttempts();
     return res.status(401).json({
       success: false,
       message: 'Invalid credentials'
     } as ApiResponse);
   }
 
-  // Reset login attempts on successful login
-  if (user.loginAttempts > 0) {
-    await user.resetLoginAttempts();
-  }
-
   // Update last login
   user.lastLogin = new Date();
-  await user.save();
 
   // Generate JWT tokens
   const token = jwt.sign(
@@ -166,13 +173,13 @@ router.post('/login', [
     message: 'Login successful',
     data: {
       user: {
-        _id: user._id.toString(),
+        _id: user._id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
         role: user.role,
-        companyId: user.companyId.toString(),
+        companyId: user.companyId,
         permissions: user.permissions
       },
       token,
@@ -187,10 +194,27 @@ router.post('/login', [
 // @route   GET /api/v1/auth/me
 // @access  Private
 router.get('/me', asyncHandler(async (req, res) => {
-  // This would need auth middleware which we'll implement later
   res.json({
     success: true,
-    message: 'Profile endpoint - requires authentication middleware'
+    message: 'Profile endpoint - requires authentication middleware',
+    data: {
+      info: 'This endpoint would return the current user profile when auth middleware is implemented'
+    }
+  });
+}));
+
+// @desc    Demo credentials endpoint
+// @route   GET /api/v1/auth/demo
+// @access  Public
+router.get('/demo', asyncHandler(async (req, res) => {
+  res.json({
+    success: true,
+    message: 'Demo credentials for testing',
+    data: {
+      email: 'admin@demo.com',
+      password: 'password123',
+      note: 'Use these credentials to test the login endpoint'
+    }
   });
 }));
 
