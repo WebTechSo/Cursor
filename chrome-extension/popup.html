@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meet Transcript Summarizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 400px;
+            min-height: 500px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .container {
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            margin: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 12px;
+        }
+
+        .status {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .status.active {
+            background: #f0fff4;
+            border-color: #68d391;
+        }
+
+        .status.inactive {
+            background: #fff5f5;
+            border-color: #fc8181;
+        }
+
+        .status-text {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 12px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #718096;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+
+        .btn-danger {
+            background: #f56565;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .summary-options {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .option-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .option-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-label {
+            font-size: 12px;
+            color: #4a5568;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background: #cbd5e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.active {
+            background: #667eea;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+
+        .summary-result {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .summary-result h4 {
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .summary-text {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #4a5568;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fed7d7;
+            border: 1px solid #feb2b2;
+            color: #c53030;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .success {
+            background: #c6f6d5;
+            border: 1px solid #9ae6b4;
+            color: #22543d;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #718096;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Meet Transcript Summarizer</h1>
+            <p>Capture and summarize Google Meet conversations</p>
+        </div>
+
+        <div class="status" id="status">
+            <div class="status-text" id="statusText">Checking status...</div>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-value" id="transcriptCount">0</div>
+                <div class="stat-label">Entries</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="meetingDuration">0m</div>
+                <div class="stat-label">Duration</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">OpenAI API Configuration</div>
+            <div class="form-group">
+                <label for="apiKey">API Key</label>
+                <input type="password" id="apiKey" placeholder="Enter your OpenAI API key">
+            </div>
+            <button class="btn" id="saveApiKey">Save API Key</button>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Summary Options</div>
+            <div class="summary-options">
+                <div class="option-row">
+                    <span class="option-label">Summary Type</span>
+                    <select id="summaryType">
+                        <option value="general">General Summary</option>
+                        <option value="action-items">Action Items</option>
+                        <option value="key-points">Key Points</option>
+                    </select>
+                </div>
+                <div class="option-row">
+                    <span class="option-label">Include Timestamps</span>
+                    <div class="toggle-switch" id="includeTimestamps"></div>
+                </div>
+                <div class="option-row">
+                    <span class="option-label">Include Speakers</span>
+                    <div class="toggle-switch active" id="includeSpeakers"></div>
+                </div>
+                <div class="option-row">
+                    <span class="option-label">Include Key Points</span>
+                    <div class="toggle-switch active" id="includeKeyPoints"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <button class="btn" id="generateSummary">Generate Summary</button>
+            <button class="btn btn-secondary" id="clearTranscript">Clear Transcript</button>
+        </div>
+
+        <div id="summaryResult" style="display: none;">
+            <div class="summary-result">
+                <h4>Meeting Summary</h4>
+                <div class="summary-text" id="summaryText"></div>
+            </div>
+        </div>
+
+        <div id="loading" style="display: none;">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Generating summary...</div>
+            </div>
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
